@@ -5,9 +5,12 @@ Juntei meu código Leitor Python com a IA Gemini para corrigir os cartões-respo
 O OpenCV lê as bolhas e a IA Gemini lê só o texto manuscrito do cabeçalho.
 
 Uso:
-    py corrigir_final.py --dia 1 Turma_001.pdf
-    py corrigir_final.py --dia 2 "pasta/*.pdf"
-    py corrigir_final.py --dia 2 Turma_001.pdf --sem-ia     # só bolhas e sem custo
+# Para o Dia 1 (60 questões + Leitura de Idioma)
+python corretor_gabaritos_bolhas.py --dia 1 "pdfs_digitalizados/*.pdf"
+
+# Para rodar sem chamar a IA (Apenas OMR OpenCV, sem custos de API)
+python corretor_gabaritos_bolhas.py --dia 2 "pdfs_digitalizados/*.pdf" --sem-ia
+    
 
 Versão atual: 1.5
 
@@ -164,7 +167,7 @@ def extrair_cabecalho_ia(page, pag, tag, crop):
     pix = page.get_pixmap(dpi=DPI_IA, clip=clip)
     jpg = pix.tobytes("jpeg", jpg_quality=85)
     if DEBUG:
-        with open(f"debug_ia_{tag}.jpg", "wb") as f:       
+        with open(f"debug/debug_ia_{tag}.jpg", "wb") as f:    
             f.write(jpg)
     try:
         try:
@@ -249,15 +252,20 @@ def montar_grade(gray, tag, colunas):
         for lin in grade:
             for x, y, r_ in lin:
                 cv2.circle(img, (int(x), int(y)), int(r_), (0, 0, 255), 1)
-        cv2.imwrite(f"debug_{tag}.png", img)
+        cv2.imwrite(f"debug/debug_{tag}.png", img)
     return grade
 
 
 def ler_lingua(gray):
     h, w = gray.shape
     r = 0.012 * w
-    ing = escuridao(gray, 0.367 * w, 0.1246 * h, r)
-    esp = escuridao(gray, 0.515 * w, 0.1246 * h, r)
+    
+    x_ing = 0.345 * w    
+    x_esp = 0.489 * w  
+    y_bolhas = 0.1246 * h      
+    
+    ing = escuridao(gray, x_ing, y_bolhas, r)
+    esp = escuridao(gray, x_esp, y_bolhas, r)
     if max(ing, esp) < T_MARCA: return "EM BRANCO"
     if min(ing, esp) >= T_MARCA: return "DUPLA"
     return "INGLES" if ing > esp else "ESPANHOL"
@@ -376,8 +384,14 @@ def main():
     usar_ia = not a.sem_ia
     if usar_ia:
         client = criar_cliente()
-    cache_path = f"cache_textos_dia{a.dia}.json"
+        
+    os.makedirs("cache", exist_ok=True)
+    os.makedirs("resultados_csv", exist_ok=True)
+    os.makedirs("debug", exist_ok=True)
+    
+    cache_path = f"cache/cache_textos_dia{a.dia}.json"
     cache = json.load(open(cache_path, encoding="utf-8")) if os.path.exists(cache_path) else {}
+    
     pasta_ev = f"evidencias_dia{a.dia}"
     os.makedirs(pasta_ev, exist_ok=True)
 
@@ -387,7 +401,8 @@ def main():
         dados.extend(processar(pdf, a.dia, cfg, cache, cache_path, usar_ia, pasta_ev))
 
     if dados:
-        saida = f"resultado_dia{a.dia}.csv"
+        agora = time.strftime("%Y%m%d_%H%M%S")
+        saida = f"resultados_csv/resultado_dia{a.dia}_{agora}.csv"
         pd.DataFrame(dados).to_csv(saida, index=False, encoding="utf-8-sig")
         print(f"\n{len(dados)} cartões -> {saida} | evidências em ./{pasta_ev}")
         n = TOTAL["chamadas"]

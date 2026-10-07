@@ -12,8 +12,8 @@ token.json
 /pdfs_digitalizados/
 /resultados_csv/
 /cache/
-/dia1/
-/dia2/
+/evidencias_dia1/
+/debug/
 *.pdf
 *.csv
 *.json
