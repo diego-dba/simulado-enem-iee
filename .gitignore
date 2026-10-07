@@ -1,0 +1,23 @@
+# Segurança e Ambiente Python
+__pycache__/
+*.pyc
+.env
+venv/
+env/
+credentials.json
+token.json
+
+# Dados Sensíveis do Simulado (NUNCA SUBIR)
+/evidencias/
+/pdfs_digitalizados/
+/resultados_csv/
+/cache/
+/dia1/
+/dia2/
+*.pdf
+*.csv
+*.json
+
+# Imagens de depuração temporárias
+debug_*.jpg
+debug_*.png

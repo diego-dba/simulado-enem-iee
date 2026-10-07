@@ -1,0 +1,6 @@
+numpy
+opencv-python
+pandas
+pymupdf
+google-genai
+python-dotenv
